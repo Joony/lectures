@@ -1,0 +1,270 @@
+\documentclass{shpdocumentation}
+
+%-------- Custom package including, please refer to shpdocumentation.cls for making permanent changes 
+
+%-------- Custom setup --------
+
+
+%-------- Custom definitions --------
+
+%-------- Title --------
+\title{$\lambda$ \\ 101\footnote{As in Room 101 from the book 1984}}
+\author{\itshape Jonathan McAllister \\ Shape \\ \small jonathan@shape.dk}
+\date{\today \\ \small v1.0.0}
+
+
+%-------- Document --------
+\begin{document}
+
+%% Title
+\maketitle
+\thispagestyle{empty} % No number on front page
+\titlepage
+
+%% ToC
+\tableofcontents
+\clearpage
+\setcounter{page}{1} % Start with page 1 after ToC
+
+%% Content 
+\section{Introduction}
+
+This lecture is meant to be a brief introduction to some of the concepts of Functional Programming and how might be applied.  The concepts used are predominantly mathematical in nature.  Before Computer Science, computing was the domain of mathematicians.  Mathematicians are great at recognising relationships and naming these patterns.
+
+\section{Nomenclature}
+
+\[ A \]
+
+Just like in algebra, we'll focus on abstractions instead of concrete values.  In programming, this $A$ represents a type.
+
+\[ \boxed{B} \]
+
+The box around the $B$ denotes a box/container.  The value $B$ is contained within a box.  In this lecture, we're not going to specify what that box is, just that it exists.  We should assume that all boxes are of the same type.
+
+\[ f\colon A \to B \]
+
+The arrow ($\to$) denotes a transformation. Also referred to as a morphism, arrow, lambda expression, or function.  For simplicity, we'll refer to them as functions from now on.  The $f$ refers to the name given to that function.
+
+\[ identity\colon A \to A \] \label{identity}
+
+This is a special type of function, called the \textit{identity} function.   This is a perfect example of mathematicians recognising and naming a pattern.
+
+
+\[ g\colon A \to \boxed{B} \]
+
+A function $g$ that transforms $A$ into a boxed $B$.
+
+\[ pure\colon A \to \boxed{A} \]
+
+A function that puts a value in a box.  Commonly known as \textit{pure}, or \textit{just}, but also referred to as a constructor or initialiser.
+
+\[ pure(A) = \boxed{A} \]
+
+Application of the function $pure$ to its argument $A$, and its resulting value $\boxed{A}$.
+
+
+\subsection{Algebraic substitution}
+
+The operation of algebraic substitution consists of systematically replacing occurrences of some symbol by a given value.  Substitution of symbols for other symbols is also possible.  For example: $(A, B) \to \boxed{(A, B)}$ could be $(C, F) \to \boxed{(C, F)}$.  In this example, all $A$ values were replaced with $C$ values and all $B$ values were replaced with $F$ values. All that is required is that the original structure remains intact.  Since functions are also values, we may want to replace a value with a function.  For example: the $A$ in $A \to B$ can be substituted with the function $A \to B$, giving you $(A \to B) \to B$.
+
+\section{Box}
+
+Boxes are types that hide values.  We can work with boxes in a uniform manner regardless of the values or the types of values contained within them.
+
+Once a value is in a box, we never work directly with that value. In order to work with the value we can use one of three common functions provided by the box.  Note: all three functions return a boxed version of the modified value.
+
+A box $ \boxed{A} $ has made available the following functions:
+
+\subsection{\textit{fmap}}
+
+\[ fmap\colon (A \to B) \to \boxed{B} \]
+
+\textit{fmap} is defined as taking a function that accepts the value contained within the box and returns a new value.
+
+Implementation of this function is generally quite simple.  Since $fmap$ is a function of $\boxed{A}$, we have direct access to $A$, so:
+
+\[ (A \to B)(A) = B \]
+\[ pure(B) = \boxed{B} \]
+
+\subsection{\textit{bind}}
+
+\[ bind\colon (A \to \boxed{B}) \to \boxed{B} \]
+
+Similar to $fmap$ except the given function returns a boxed value.
+
+Implementation is also straightforward:
+
+\[ (A \to \boxed{B})(A) = \boxed{B} \]
+
+\subsection{\textit{apply}}
+
+\[ apply\colon (\boxed{A \to B}) \to \boxed{B} \]
+
+Unlike the other two, $apply$ takes a boxed function.  How and why a function ends up in a box is a result of how we use functions, as we'll see in the next chapter on Curry.
+
+Implementation of $apply$ requires a little bit more thought that the previous two.
+
+At first glance, we must return a $\boxed{B}$.  The $B$ can be obtained from the function $A \to B$ contained within the supplied box $\boxed{A \to B}$, but we must first unwrap the function.  Unwrapping can be done by using one of the pre-defined functions ($fmap$, $bind$, or $apply$).  Applying algebraic substitution, $\boxed{A \to B}$ has the following functions:
+
+\[ fmap\colon ((A \to B) \to B) \to \boxed{B} \]
+\[ bind\colon ((A \to B) \to \boxed{B}) \to \boxed{B} \]
+\[ apply\colon (\boxed{(A \to B) \to B}) \to \boxed{B} \]
+
+Since we don't have a $\boxed{(A \to B) \to B}$, we can't use $apply$.
+
+We could use $fmap$ but we would be required to box the returned value.  Since $bind$ already returns a boxed value, it seems like a better fit for the problem. To use $bind$ we must supply a function $(A \to B) \to \boxed{B}$. The keen observer will notice that we have that exact function available to us in scope.
+
+Write the implementation of $apply$ only using the functions available in scope.  You can find the solution in section \ref{solution-apply}.
+
+\section{Curry}\label{curry}
+
+\[ curry\colon ((A, B) \to C) \to (A \to B \to C) \]
+
+Currying is the process of converting a function that takes multiple arguments into a function that takes them one at a time.
+
+Currying allows us to encapsulates state. Reduces complexity by breaking the task down and working with values one at a time.
+
+\[ curry((A, B) \to C) = A \to B \to C \]
+
+\section{Lift}
+
+Unwrapping and re-wrapping boxed values can be repetitive and time-consuming.  Luckily we can write a function to do the hard work for us.
+
+\[ lift2\colon ((A, B) \to C) \to ((\boxed{A}, \boxed{B}) \to \boxed{C}) \]
+
+To implement $lift2$ first we have to return a function $((\boxed{A}, \boxed{B}) \to \boxed{C})$.  So in this scope we're working with two arguments ($\boxed{A}$, and $\boxed{B}$), a function $((A, B) \to C)$, and we need to return a $\boxed{C}$.  As mentioned in section \ref{curry}, if we $curry$ the input function we can reduce the complexity by only dealing with the arguments one at a time:
+
+\[ curry((A, B) \to C = A \to B \to C \]
+
+The new curried function accepts an $A$ and has the same signature as accepted by \boxed{A}'s $fmap$:
+
+\[ \boxed{A}.fmap(A \to B \to C) = \boxed{B \to C} \]
+
+Applying $A \to B \to C$ to the value $A$ returns the next function $B \to C$, so the result of the $fmap$ is a function in a box.  The function within the box takes a $B$, so we can simply use $apply$ of $\boxed{B}$:
+
+\[ \boxed{B}.apply(\boxed{B \to C}) = \boxed{C} \]
+
+And here we have the $\boxed{C}$ that we need to return.
+
+This same principle can be applied to a function of any arity.  You $fmap$ the first argument and then keep using $apply$ on all subsequent arguments until you end up with the value you need to return.
+
+Write the final implementation.  The solution can be found in section \ref{solution-lift}
+
+\section{Zip}
+
+\[ zip\colon (\boxed{A}, \boxed{B}) \to \boxed{(A, B)} \]
+
+Using algebraic substitution, if we replace the $C$ in the signature of $lift2$ with $(A, B)$, we get:
+
+\[ lift2\colon ((A, B) \to (A, B)) \to ((\boxed{A}, \boxed{B}) \to \boxed{(A, B)}) \]
+
+As you can see, the return signature is exactly the same as $zip$, therefor we can use $lift2$ to implement $zip$.  First we need to give $lift2$ a $(A, B) \to (A, B)$.  Once we have the lifted function, we  just need to apply it to the arguments.  The implementation can be written like this:
+
+\[ lift2((A, B) \to (A, B))(\boxed{A}, \boxed{B}) = \boxed{(A, B)} \]
+
+Where do we get the function to give to $lift2$ though?  The $(A, B) \to (A, B)$ pattern looks very familiar.  We can use a predefined function in its place.  Write the implementation.  Find the complete solution in section \ref{solution-zip}.
+
+
+\section{Summary}
+
+We can use simple building block to create complex functionality. If the box is an asynchronous box, then \textit{zip} is a way for us to retrieve many asynchronous values in parallel and process them only once all have completed.
+
+\subsection{Existing implementations (Swift)}
+
+\subsubsection{PromiseKit}
+
+
+\begin{lstlisting}[language=swift,escapechar=\%]
+for promise in thenables {
+  promise.pipe { result in
+    barrier.sync(flags: .barrier) {
+      switch result {
+      case .rejected(let error):
+        if rp.isPending {
+%\Hilight%          progress.completedUnitCount =
+%\Hilight%            progress.totalUnitCount
+          rp.box.seal(.rejected(error))
+        }
+      case .fulfilled:
+        guard rp.isPending else { return }
+        progress.completedUnitCount += 1
+        countdown -= 1
+        if countdown == 0 {
+          rp.box.seal(.fulfilled(()))
+        }
+      }
+    }
+  }
+}
+\end{lstlisting}
+\url{https://github.com/mxcl/PromiseKit/blob/master/Sources/when.swift#L22}
+
+\clearpage
+
+\subsubsection{Promises (Google)}
+
+\begin{lstlisting}[language=swift,escapechar=\%]
+for (FBLPromise *promise in promises) {
+  [promise observeOnQueue:queue
+    fulfill:^(id __unused _) {
+      // Wait until all are fulfilled.
+%\Hilight%      for (FBLPromise *promise in promises) {
+%\Hilight%        if (!promise.isFulfilled) {
+%\Hilight%          return;
+%\Hilight%        }
+%\Hilight%      }
+      // If called multiple times, only the first one
+      // affects the result.
+      fulfill([promises valueForKey:
+        NSStringFromSelector(@selector(value))]);
+    }
+    reject:^(NSError *error) {
+      reject(error);
+    }];
+  }
+\end{lstlisting}
+\url{https://github.com/google/promises/blob/master/Sources/FBLPromises/FBLPromise%2BAll.m#L51}
+
+%FutureKit
+%https://github.com/FutureKit/FutureKit/blob/master/FutureKit/FutureBatch.swift#L281
+%
+%Promise
+%https://github.com/khanlou/Promise/blob/master/Promise/Promise%2BExtras.swift#L89
+%
+%then
+%https://github.com/freshOS/then/blob/master/Source/Promise%2BZip.swift#L14
+%
+%BrightFutures
+%https://github.com/Thomvis/BrightFutures/blob/b2229383ddcc30a81b4251b073a9c3519da7dfb9/Sources/BrightFutures/AsyncType%2BResultType.swift#L155
+
+
+\clearpage
+
+\section{Solutions} \label{solutions}
+
+\subsection{$apply$} \label{solution-apply}
+The function signature of the function required by the $bind$ function of $\boxed{A \to B}$ is exactly the same as that of the $fmap$ function of $\boxed{A}$, therefor:
+
+\[ \boxed{A \to B}.bind(\boxed{A}.fmap) = \boxed{B} \]
+
+\subsection{$lift2$} \label{solution-lift}
+
+\[ \boxed{B}.apply(\boxed{A}.fmap(curry((A, B) \to C))) \]
+
+\subsection{$zip$} \label{solution-zip}
+
+The function $(A, B) \to (A, B)$ is the $identity$ function, therefor $zip$ can be implemented as:
+
+\[ lift2(identity)(\boxed{A}, \boxed{B}) = \boxed{(A, B)} \]
+
+%\begin{thebibliography}{9}
+%
+%%% Bibliography
+%\bibitem{example-reference}
+%This is an example reference
+%\\\texttt{http://example.com/reference.html}
+%
+%\end{thebibliography}
+
+
+\end{document}
